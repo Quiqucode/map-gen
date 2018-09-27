@@ -1,17 +1,19 @@
 import numpy as np
 from random import randint, choice
-from math import ceil
+from math import ceil, floor
+from os import system
+from time import sleep
 
 class Dungeon:
   def __init__(self):
-    self.WIDTH = 32
-    self.HEIGHT = 32
+    self.WIDTH = 64
+    self.HEIGHT = 64
     self.dungeon = np.ones((self.WIDTH, self.HEIGHT), dtype=int)
     self.gen = 0
 
 def gen_room():
-  MIN = 2
-  MAX = 6
+  MIN = 4
+  MAX = 12
   room = np.zeros((randint(MIN, MAX), randint(MIN, MAX)))
   #print(room)
   return room
@@ -24,7 +26,7 @@ def add_feature(d):
 
   elif d.gen % 2 == 1: #corridor
     MIN = 4
-    MAX = 10
+    MAX = 12
     row, col = choose_wall(d, (2, 3))
     d.dungeon[row, col] = 0
     dirs = []
@@ -34,71 +36,75 @@ def add_feature(d):
     if d.dungeon[row-1, col] != 0: dirs.append((-1, 0)) 
     direction = choice(dirs)
     length = randint(MIN, MAX)
-    for i in range(length):
+    for _ in range(length):
       row+=direction[0]
       col+=direction[1]
       if row > 0 and row < d.HEIGHT and col > 0 and col < d.WIDTH:
         d.dungeon[row, col] = 0
-    new_dirs = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-    new_dirs.remove(direction)
-    new_dir = choice(new_dirs)
 
-    row+=new_dir[0]
-    col+=new_dir[1]
-
-    if row < 0: row = 1
-    if col < 0: col = 1
-    if row > d.HEIGHT: row = d.HEIGHT-1
-    if col > d.WIDTH: col = d.WIDTH-1
-    try:
-      d.dungeon[row, col] = 0
-    except IndexError:
-      print(row, col)
-
+  elif d.gen % 2 == 0: #room
+    row, col = choose_wall(d, (3, 3))
+    d.dungeon[row, col] = 0
     room = gen_room()
-    if new_dir == (-1, 0): #GOING UP
+    dirs = fits(d, room, row, col)
+    if len(dirs) > 0:
+      direction = choice(dirs)
+    else:
+      return d.dungeon, d.gen
+    print(row, col, direction, room.shape)
+
+    if direction == (-1, 0): #GOING UP
       row-=(room.shape[0])
-      col-=randint(-1*ceil(room.shape[1]/2), ceil(room.shape[1]/2))
+      col-=randint(-1*ceil(room.shape[1]/2)+1, ceil(room.shape[1]/2)-1)
       print("up", row, "+", room.shape[0], col, "+", room.shape[1])
-    elif new_dir == (0, -1): #GOING LEFT
+    elif direction == (0, -1): #GOING LEFT
       col-=(room.shape[1])
-      row-=randint(-1*ceil(room.shape[0]/2), ceil(room.shape[0]/2))
+      row-=randint(-1*ceil(room.shape[0]/2)+1, ceil(room.shape[0]/2)-1)
       print("left", row, "+", room.shape[0], col, "+", room.shape[1])
-    elif new_dir == (1, 0): #GOING DOWN
+    elif direction == (1, 0): #GOING DOWN
       row-=1
-      col-=randint(-1*ceil(room.shape[1]/2), ceil(room.shape[1]/2))
+      col-=randint(-1*ceil(room.shape[1]/2)+1, ceil(room.shape[1]/2)-1)
       print("down", row, "+", room.shape[0], col, "+", room.shape[1])
-    elif new_dir == (0, 1): #GOING RIGHT
-      row-=randint(-1*ceil(room.shape[0]/2), ceil(room.shape[0]/2))
+    elif direction == (0, 1): #GOING RIGHT
+      row-=randint(-1*ceil(room.shape[0]/2)+1, ceil(room.shape[0]/2)-1)
       print("right", row, "+", room.shape[0], col, "+", room.shape[1])
     else:
       return d.dungeon, d.gen
-    
-    if row < 0: row = room.shape[0]
-    if col < 0: col = room.shape[1]
-    if row > d.HEIGHT: row = d.HEIGHT-room.shape[0]
-    if col > d.WIDTH: col = d.WIDTH-room.shape[1]
-    try:
-      d.dungeon[row:row+room.shape[0], col:col+room.shape[1]] = room
-    except ValueError or IndexError:
-      print(row, row+room.shape[0], col, col+room.shape[1])
 
-  elif d.gen % 2 == 0: #room
-    '''
-    room = gen_room()
-    row, col = choose_wall(d, (1, 1))
-    print(row, col)
-    try:
-      dims = list(map(int, [row-room.shape[0]/2, row+room.shape[0]/2, col-room.shape[1]/2, col+room.shape[1]/2]))
-      
-      d.dungeon[dims[0]:dims[1], dims[2]:dims[3]] = room
-    except ValueError:
-      return d.dungeon, d.gen'''
+    d.dungeon[row:row+room.shape[0], col:col+room.shape[1]] = room
+
+
 
   else: #pass
-    return
+    return d.dungeon, d.gen
       
   return d.dungeon, d.gen+1
+
+def fits(d, room, row, col):
+  valid = []
+  #NORTH
+  dims=[row-room.shape[0]-1, row-1, ceil(col-room.shape[1]/2), floor(col+room.shape[1]/2)]
+  temp = d.dungeon[dims[0]:dims[1], dims[2]:dims[3]]
+  if np.array_equal(np.ones((abs(dims[1]-dims[0]), abs(dims[3]-dims[2])), dtype=int), temp):
+    valid.append((-1, 0))
+  #SOUTH
+  dims=[row+room.shape[0]+1, row+1, ceil(col-room.shape[1]/2), floor(col+room.shape[1]/2)]
+  temp = d.dungeon[dims[0]:dims[1], dims[2]:dims[3]]
+  if np.array_equal(np.ones((abs(dims[0]-dims[1]), abs(dims[3]-dims[2])), dtype=int), temp):
+    valid.append((1, 0))
+  #WEST
+  dims=[ceil(row-room.shape[0]/2), floor(row+room.shape[0]/2), col-room.shape[1]-1, col-1]
+  temp = d.dungeon[dims[0]:dims[1], dims[2]:dims[3]]
+  if np.array_equal(np.ones((abs(dims[1]-dims[0]), abs(dims[3]-dims[2])), dtype=int), temp):
+    valid.append((0, -1))
+  #EAST
+  dims=[ceil(row-room.shape[0]/2), floor(row+room.shape[0]/2), col+room.shape[1]+1, col+1]
+  temp = d.dungeon[dims[0]:dims[1], dims[2]:dims[3]]
+  if np.array_equal(np.ones((abs(dims[1]-dims[0]), abs(dims[3]-dims[2])), dtype=int), temp):
+    valid.append((0, 1))
+
+
+  return valid
 
 def choose_wall(d, arr):
   while True:
@@ -132,16 +138,22 @@ def in_range(d, row, col):
 if __name__ == '__main__':
   np.set_printoptions(threshold=np.nan)
   d = Dungeon()
-  for _ in range(12):
-    d.dungeon, d.gen = add_feature(d)
+  for i in range(40):
+    system("cls")
+    try:
+      d.dungeon, d.gen = add_feature(d)
+    except IndexError:
+      i += 1
 
-  for row in range(d.HEIGHT):
-    for col in range(d.WIDTH):
-      if d.dungeon[row, col] == 1:
-        print(" ", end="")
-      else:
-        print("#", end="")
-    print("")
+    for row in range(d.HEIGHT):
+      for col in range(d.WIDTH):
+        if d.dungeon[row, col] == 1:
+          print(" ", end="")
+        else:
+          print("#", end="")
+      print("")
+    
+    
 
 #0 void
 #1 empty
