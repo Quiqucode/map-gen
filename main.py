@@ -11,7 +11,7 @@ class Dungeon:
     self.BORDER = 8
     self.TOTAL_GENS = 138
     self.ROOM_DIMS = (6, 12)
-    self.CORR_DIMS = (8, 20)
+    self.CORR_DIMS = (8, 12) #set to (1, 2) for cave levels
     self.dungeon = np.ones((self.HEIGHT, self.WIDTH), dtype=int)
     self.gen = 0
 
