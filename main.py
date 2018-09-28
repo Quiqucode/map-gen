@@ -5,13 +5,20 @@ from os import system
 from time import sleep
 
 class Dungeon:
-  def __init__(self):
+  def __init__(self, mode="strd"):
     self.WIDTH = 138
     self.HEIGHT = 92
     self.BORDER = 8
     self.TOTAL_GENS = 138
     self.ROOM_DIMS = (6, 12)
-    self.CORR_DIMS = (8, 12) #set to (1, 2) for cave levels
+    if mode == "strd":
+      self.CORR_DIMS = (6, 12)
+    elif mode == "cav":
+      self.CORR_DIMS = (1, 2)
+      self.ROOM_DIMS = (2, 12)
+      self.TOTAL_GENS = 512
+    else:
+      pass
     self.dungeon = np.ones((self.HEIGHT, self.WIDTH), dtype=int)
     self.gen = 0
 
@@ -136,7 +143,7 @@ if __name__ == '__main__':
     try:
       d.dungeon, d.gen = add_feature(d)
     except IndexError:
-      i += 1
+      pass
 
   for row in range(d.HEIGHT):
     for col in range(d.WIDTH):
