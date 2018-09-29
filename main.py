@@ -1,8 +1,6 @@
 import numpy as np
 from random import randint, choice
 from math import ceil, floor
-from os import system
-from time import sleep
 
 class Dungeon:
   def __init__(self, mode="strd"):
@@ -13,9 +11,9 @@ class Dungeon:
     self.ROOM_DIMS = (6, 12)
     if mode == "strd":
       self.CORR_DIMS = (6, 12)
-    elif mode == "cav":
+    elif mode == "cave":
       self.CORR_DIMS = (1, 2)
-      self.ROOM_DIMS = (2, 12)
+      self.ROOM_DIMS = (2, 18)
       self.TOTAL_GENS = 512
     else:
       pass
@@ -138,6 +136,7 @@ def in_range(d, row, col):
 if __name__ == '__main__':
   #np.set_printoptions(threshold=np.nan)
   d = Dungeon()
+  #d = Dungeon("cave")
   while d.gen < d.TOTAL_GENS:
     #system("clear")
     try:
