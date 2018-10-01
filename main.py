@@ -1,8 +1,6 @@
 import numpy as np
 from random import randint, choice
 from math import ceil, floor
-from os import system
-from time import sleep
 
 class Dungeon:
   def __init__(self, mode="strd"):
