@@ -32,7 +32,7 @@ def gen_room(d):
 def add_feature(d):
   if d.gen == 0: #add a room to the middle
     room = gen_room(d)
-    dims = list(map(int, [d.WIDTH/2-room.shape[0], d.WIDTH/2, d.HEIGHT/2-room.shape[1], d.HEIGHT/2]))
+    dims = list(map(int, [d.WIDTH/2-room.shape[0]/2, d.WIDTH/2+room.shape[0]/2, d.HEIGHT/2-room.shape[1]/2, d.HEIGHT/2+room.shape[1]/2]))
     d.dungeon[dims[0]:dims[1], dims[2]:dims[3]] = room
 
   elif d.gen > 0: #corridor
