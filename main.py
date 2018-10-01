@@ -1,19 +1,21 @@
 import numpy as np
 from random import randint, choice
 from math import ceil, floor
+from os import system
+from time import sleep
 
 class Dungeon:
   def __init__(self, mode="strd"):
     self.WIDTH = 138
     self.HEIGHT = 92
     self.BORDER = 8
-    self.TOTAL_GENS = 138
+    self.TOTAL_GENS = 80
     self.ROOM_DIMS = (6, 12)
     if mode == "strd":
       self.CORR_DIMS = (6, 12)
     elif mode == "cave":
       self.CORR_DIMS = (1, 2)
-      self.ROOM_DIMS = (2, 18)
+      self.ROOM_DIMS = (2, 12)
       self.TOTAL_GENS = 512
     else:
       pass
@@ -33,7 +35,7 @@ def add_feature(d):
     dims = list(map(int, [d.WIDTH/2-room.shape[0], d.WIDTH/2, d.HEIGHT/2-room.shape[1], d.HEIGHT/2]))
     d.dungeon[dims[0]:dims[1], dims[2]:dims[3]] = room
 
-  elif d.gen % 2 == 1: #corridor
+  elif d.gen > 0: #corridor
     MIN = d.CORR_DIMS[0]
     MAX = d.CORR_DIMS[1]
     row, col = choose_wall(d, (2, 3))
@@ -68,42 +70,10 @@ def add_feature(d):
     except ValueError:
       return d.dungeon, d.gen
 
-  elif d.gen % 2 == 0: #room
-    pass
-
-
-
   else: #pass
     return d.dungeon, d.gen
       
   return d.dungeon, d.gen+1
-
-def fits(d, room, row, col):
-  valid = []
-  #NORTH
-  dims=[row-room.shape[0]-1, row-1, ceil(col-room.shape[1]/2)-1, floor(col+room.shape[1]/2)+1]
-  temp = d.dungeon[dims[0]:dims[1], dims[2]:dims[3]]
-  if np.array_equal(np.ones((abs(dims[1]-dims[0]), abs(dims[3]-dims[2])), dtype=int), temp):
-    valid.append((-1, 0))
-  #SOUTH
-  dims=[row+room.shape[0]+1, row+1, ceil(col-room.shape[1]/2)-1, floor(col+room.shape[1]/2)+1]
-  temp = d.dungeon[dims[0]:dims[1], dims[2]:dims[3]]
-  if np.array_equal(np.ones((abs(dims[0]-dims[1]), abs(dims[3]-dims[2])), dtype=int), temp):
-    valid.append((1, 0))
-  #WEST
-  dims=[ceil(row-room.shape[0]/2)-1, floor(row+room.shape[0]/2)+1, col-room.shape[1]-1, col-1]
-  temp = d.dungeon[dims[0]:dims[1], dims[2]:dims[3]]
-  if np.array_equal(np.ones((abs(dims[1]-dims[0]), abs(dims[3]-dims[2])), dtype=int), temp):
-    valid.append((0, -1))
-  #EAST
-  dims=[ceil(row-room.shape[0]/2)-1, floor(row+room.shape[0]/2)+1, col+room.shape[1]+1, col+1]
-  temp = d.dungeon[dims[0]:dims[1], dims[2]:dims[3]]
-  if np.array_equal(np.ones((abs(dims[1]-dims[0]), abs(dims[3]-dims[2])), dtype=int), temp):
-    valid.append((0, 1))
-
-
-  return valid
-
 def choose_wall(d, arr):
   while True:
     row, col = randint(1, d.HEIGHT), randint(1, d.WIDTH)
@@ -136,7 +106,6 @@ def in_range(d, row, col):
 if __name__ == '__main__':
   #np.set_printoptions(threshold=np.nan)
   d = Dungeon()
-  #d = Dungeon("cave")
   while d.gen < d.TOTAL_GENS:
     #system("clear")
     try:
