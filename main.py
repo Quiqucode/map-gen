@@ -1,6 +1,8 @@
 import numpy as np
 from random import randint, choice
 from math import ceil, floor
+import automata
+from time import time
 
 class Dungeon:
   def __init__(self, mode="strd"):
@@ -9,6 +11,9 @@ class Dungeon:
     self.BORDER = 8
     self.TOTAL_GENS = 80
     self.ROOM_DIMS = (6, 12)
+
+    self.NUM_ORES = 48
+
     if mode == "strd":
       self.CORR_DIMS = (6, 12)
     elif mode == "cave":
@@ -101,7 +106,31 @@ def get_neighbors(d, row, col):
 def in_range(d, row, col):
   return 0 < row < d.HEIGHT and 0 < col < d.WIDTH
 
+def add_minerals(d):
+  #add softer rock %
+  overlay = automata.test(height=d.WIDTH-d.BORDER, width=d.WIDTH-d.BORDER, gen_passes=2, polish_passes=4)
+  
+  for i in range(floor(d.BORDER/2), d.HEIGHT-ceil(d.BORDER/2)):
+    for j in range(floor(d.BORDER/2), d.WIDTH-ceil(d.BORDER/2)):
+      if overlay[i][j] == 1 and d.dungeon[i, j] == 1:
+        #print("test")
+        d.dungeon[i, j] = 2
+  #ores
+  PATCH_SIZE=6
+  for _ in range(d.NUM_ORES):
+    overlay = np.array(automata.test(height=8, width=8, gen_passes=1, polish_passes=2))[1:PATCH_SIZE,1:PATCH_SIZE]
+    
+    dims=[randint(PATCH_SIZE, d.HEIGHT-PATCH_SIZE*2), randint(PATCH_SIZE, d.WIDTH-PATCH_SIZE*2)]
+
+    for i in range(dims[0], dims[0]+PATCH_SIZE):
+      for j in range(dims[1], dims[1]+PATCH_SIZE):
+        if (d.dungeon[i, j] != 0) and (overlay[i-dims[0]-1, j-dims[1]-1] == 0):
+          d.dungeon[i, j] = 3
+  return d.dungeon
+
+
 if __name__ == '__main__':
+  start_time = time()
   #np.set_printoptions(threshold=np.nan)
   d = Dungeon()
   while d.gen < d.TOTAL_GENS:
@@ -110,14 +139,23 @@ if __name__ == '__main__':
       d.dungeon, d.gen = add_feature(d)
     except IndexError:
       pass
+  
+  d.dungeon = add_minerals(d)
+  
 
   for row in range(d.HEIGHT):
     for col in range(d.WIDTH):
       if d.dungeon[row, col] == 1:
         print("#", end="")
+      elif d.dungeon[row, col] == 2:
+        print("%", end="")
+      elif d.dungeon[row, col] == 3:
+        print("*", end="")
       else:
         print(".", end="")
     print("")
+
+  print("\n\n\nTOTAL RUN TIME: ", time()-start_time)
     
     
 
